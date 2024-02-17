@@ -130,6 +130,8 @@ class Library:
             print("I confirm deletion")
             self.remove_book_from_list(index_number)
             pop_up_window.destroy()
+            #show details destroy
+            window.destroy()
             self.list_book()
 
         def remove_cancel():
@@ -163,8 +165,68 @@ class Library:
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
-    def update_book(self, index_number):
+    # def update_book(self, index_number):
+    #     print(f"Index to be updated {index_number}")
+    
+    def update_book(self, index_number,book_details_window):
         print(f"Index to be updated {index_number}")
+
+        # Önce seçili kitabın detaylarını alalım
+        with open("books.txt", "r") as file:
+            file.seek(0)
+            books_content = file.readlines()
+            books_list = [line.strip().split(",") for line in books_content]
+            selected_book_details = books_list[index_number]
+
+        # Yeni pencereyi açalım ve detayları gösterelim
+        update_window = Toplevel()
+        update_window.geometry("400x400")
+        update_window.title("Update Book Details")
+
+        labels = ["Book Name", "Author", "Release Year", "Number of Pages"]
+        entry_widgets = []
+
+        for i, label_text in enumerate(labels):
+            label = Label(update_window, text=label_text)
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="e")
+
+            entry = Entry(update_window, width=30)
+            entry.grid(row=i, column=1, padx=10, pady=5)
+            entry.insert(0, selected_book_details[i])
+
+            entry_widgets.append(entry)
+
+        labels = Label(update_window, text="Information")
+        labels.grid(row=4, column=0, padx=10, pady=5, sticky="e")
+        entry_information = Text(update_window, width=30, height=10)
+        entry_information.grid(row=4, column=1, padx=10, pady=5)
+        entry_information.insert('1.0', selected_book_details[3])
+
+        # Kitabın detaylarını güncelleyen fonksiyon
+        def update_book_details():
+            updated_details = [entry.get() for entry in entry_widgets]
+            updated_details.append(entry_information.get("1.0", "end-1c"))
+
+            # Güncellenen detayları dosyaya yazalım
+            with open("books.txt", "r") as file:
+                lines = file.readlines()
+
+            lines[index_number] = ", ".join(updated_details) + "\n"
+
+            with open("books.txt", "w") as file:
+                file.writelines(lines)
+
+            messagebox.showinfo("Success", "Book details updated.")
+            update_window.destroy()
+            book_details_window.destroy()
+            self.list_book()
+
+        # Güncelleme butonu
+        update_button = Button(update_window, text="Update Book", command=update_book_details)
+        update_button.grid(row=5, columnspan=2, pady=10)
+    
+    
+    
 
     def all_books_remove(self, text_box):
         pop_up_window = Toplevel()
@@ -246,7 +308,7 @@ class Library:
             entry_information.grid(row=4, column=1, padx=10, pady=5)
             entry_information.insert('1.0', book_details[3])
 
-            update_book_button = Button(details_window, text="Update Book", command=lambda: self.update_book(index_number=index_number))
+            update_book_button = Button(details_window, text="Update Book", command=lambda: self.update_book(index_number=index_number,book_details_window=details_window))
             update_book_button.grid(row=5, columnspan=2, pady=10)
             remove_book_button = Button(details_window, text="Remove Book", command=lambda: self.remove_book(index_number=index_number, window=details_window))
             remove_book_button.grid(row=6, columnspan=2, pady=10)
