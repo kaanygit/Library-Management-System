@@ -18,7 +18,9 @@ text_Box.pack(side=LEFT, expand=True)
 
 scrollBar = Scrollbar(contentFrame, command=text_Box.yview)
 scrollBar.pack(side=RIGHT, fill=Y)
-text_Box.config(yscrollcommand=scrollBar.set)
+text_Box.config(yscrollcommand=scrollBar.set,state=NORMAL,cursor="arrow")
+
+
 
 # updated opening screen
 with open('books.txt', 'r') as file:
@@ -27,6 +29,8 @@ with open('books.txt', 'r') as file:
     updated_list = [line.strip().split(',') for line in updated_content]
     for item in updated_list:
         text_Box.insert('end', item[0] + "\n")
+
+
 
 ## Command Buttons
 add_book_button = Button(root, text="Add Book", command=lambda: lib.add_books(text_Box))
