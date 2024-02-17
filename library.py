@@ -1,5 +1,9 @@
 from tkinter import *
 from tkinter import messagebox
+from database import MongoDBHandler
+
+
+
 
 class Library:
     def __init__(self):
@@ -7,12 +11,16 @@ class Library:
         self.read_file = open('books.txt', 'r')
         self.list_book_window = None
         self.scroll_bar = Scrollbar()
-
+        self.mongo_handler = MongoDBHandler()
+    
+    
     def read_books(self):
-        self.file.seek(0)
-        books_lines = self.file.readlines()
-        books_list = [line.strip().split(",") for line in books_lines]
-        print(books_list)
+        # self.file.seek(0)
+        # books_lines = self.file.readlines()
+        # books_list = [line.strip().split(",") for line in books_lines]
+        # print(books_list)
+        
+        self.mongo_handler.get_all_books_data()
 
     def add_books(self, text_box):
         new = Toplevel()
@@ -66,10 +74,22 @@ class Library:
                     if len(book_information_content) > 50:
                         messagebox.showwarning("Warning", "Information cannot exceed 50 characters.")
                         return
+                    
+                    ##MongoDB Add Book
+                    new_book = {
+                        "Book Name": book_name_content,
+                        "Author": book_author_content,
+                        "Release Year": book_release_content,
+                        "Number of Pages": book_number_page_content,
+                        "Information": book_information_content
+                    }
+                    self.mongo_handler.add_book_database(new_book)
+                    
+                                       
                     self.file.write(
                         f"{book_name_content}, {book_author_content}, {book_release_content}, {book_number_page_content}, {book_information_content}\n"
                     )
-                    print("Text written")
+                    print("The book added to database and books.txt")
 
                     self.file.seek(0)
                     updated_content = self.file.readlines()
@@ -87,6 +107,7 @@ class Library:
     def list_book(self):
         if self.list_book_window:
             self.list_book_window.destroy()
+
         new_window = Toplevel()
         new_window.geometry("750x400")
         new_window.title("List Books")
@@ -113,11 +134,15 @@ class Library:
                 print(i)
                 self.show_details(index_number=i, list_book_window_old=new_window)
 
+            ## mongodb den gelen data ile değişim
             for item_index, item in enumerate(books_list):
                 text_box.insert('end', item[index] + "\n")
                 text_box.tag_configure(f"tag{item_index}", foreground="blue", underline=False)
                 text_box.tag_bind(f"tag{item_index}", "<Button-1>", lambda event, i=item_index: on_click_details(event, i))
                 text_box.tag_add(f"tag{item_index}", f"{item_index + 1}.0", f"{item_index + 1}.end")
+
+
+
 
     def remove_book(self, index_number, window):
         pop_up_window = Toplevel()
@@ -157,19 +182,20 @@ class Library:
             del lines[index]
 
             with open("books.txt", "w") as file:
-                file.writelines(lines)
+                file.writelines(lines)                 
+                self.mongo_handler.remove_data_index(index)
 
             messagebox.showinfo("Success", "Selected book has been removed.")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
-    def update_book(self, index_number):
-        print(f"Index to be updated {index_number}")
+    # def update_book(self, index_number):
+    #     print(f"Index to be updated {index_number}")
 
     def all_books_remove(self, text_box):
         pop_up_window = Toplevel()
         pop_up_window.title("Remove All Book")
-
+        self.mongo_handler.get_all_books_data()
         label_message = Label(pop_up_window, text="Do you confirm deleting all books?")
         label_message.grid(row=0, column=0, columnspan=2, pady=10)
 
@@ -180,6 +206,7 @@ class Library:
                     text_box.delete(1.0, END)
                     print("All books deleted.")
                     messagebox.showinfo("Success", "All books have been removed.")
+                    self.mongo_handler.all_remove_books()
             except Exception as e:
                 messagebox.showerror("Error", f"An error occurred: {str(e)}")
             pop_up_window.destroy()
@@ -246,12 +273,10 @@ class Library:
             entry_information.grid(row=4, column=1, padx=10, pady=5)
             entry_information.insert('1.0', book_details[3])
 
-            update_book_button = Button(details_window, text="Update Book", command=lambda: self.update_book(index_number=index_number))
-            update_book_button.grid(row=5, columnspan=2, pady=10)
+            # update_book_button = Button(details_window, text="Update Book", command=lambda: self.update_book(index_number=index_number))
+            # update_book_button.grid(row=5, columnspan=2, pady=10)
             remove_book_button = Button(details_window, text="Remove Book", command=lambda: self.remove_book(index_number=index_number, window=details_window))
             remove_book_button.grid(row=6, columnspan=2, pady=10)
-
-
 
 
 
